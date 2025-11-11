@@ -27,6 +27,20 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+app.post('/create', async (req, res) => {
+  try {
+    const apiKey = API_PREFIX + crypto.randomBytes(24).toString('hex').toUpperCase();
+
+    const sql = 'INSERT INTO api_keys (api_key, is_active) VALUES (?, 1)';
+    await pool.execute(sql, [apiKey]);
+
+    res.json({ apiKey });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Gagal membuat API key' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server berjalan di http://localhost:${port}`);
 });
