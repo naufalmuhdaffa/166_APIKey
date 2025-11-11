@@ -41,6 +41,39 @@ app.post('/create', async (req, res) => {
   }
 });
 
+app.post('/cekapi', async (req, res) => {
+  try {
+    const fromHeader = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+    const apiKey = (req.body && req.body.apiKey) ? String(req.body.apiKey) : fromHeader;
+
+    if (!apiKey) {
+      return res.status(400).json({ valid: false, error: 'apiKey wajib dikirim (body.apiKey atau Authorization: Bearer ...)' });
+    }
+    if (!apiKey.startsWith(API_PREFIX)) {
+      return res.status(400).json({ valid: false, error: 'Format apiKey tidak valid' });
+    }
+
+    const [rows] = await pool.execute(
+      'SELECT id, is_active FROM api_keys WHERE api_key = ? LIMIT 1',
+      [apiKey]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ valid: false, error: 'API key tidak dikenali' });
+    }
+    if (!rows[0].is_active) {
+      return res.status(403).json({ valid: false, error: 'API key nonaktif' });
+    }
+
+    await pool.execute('UPDATE api_keys SET last_used_at = NOW() WHERE id = ?', [rows[0].id]);
+
+    return res.json({ valid: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ valid: false, error: 'Terjadi kesalahan saat verifikasi' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server berjalan di http://localhost:${port}`);
 });
