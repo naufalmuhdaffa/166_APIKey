@@ -18,10 +18,14 @@ const pool = mysql.createPool({
   port: process.env.DB_PORT
 });
 
+const API_PREFIX = 'sk-sm-v1-';
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 app.listen(port, () => {
   console.log(`Server berjalan di http://localhost:${port}`);
